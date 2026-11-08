@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WordCrown – Word Search by KING_YOSEF_</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #120f26;
+    --panel: #1c1740;
+    --panel2: #2a2362;
+    --ink: #f2efff;
+    --muted: #a69fd1;
+    --gold: #ffc94a;
+    --gold-ink: #241a00;
+    --accent: #8b6cff;
+    --pro: #ff5c7a;
+    --line: rgba(255,255,255,.08);
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    --found-ink: #10102a;
+  }
+  [data-theme="light"] {
+    --bg: #f0eeff;
+    --panel: #ffffff;
+    --panel2: #e4dfff;
+    --ink: #1d1745;
+    --muted: #6a639c;
+    --gold: #ffc94a;
+    --gold-ink: #241a00;
+    --accent: #6a4bff;
+    --pro: #e63a5c;
+    --line: rgba(29,23,69,.1);
+    --shadow: 0 10px 30px rgba(60,40,140,.15);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Fredoka", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  .app {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 14px 16px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  /* header */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand svg { width: 44px; height: 44px; flex: none; }
+  .brand h1 {
+    margin: 0;
+    font-family: "Lilita One", "Fredoka", system-ui, sans-serif;
+    font-weight: 400;
+    font-size: clamp(26px, 5vw, 36px);
+    letter-spacing: .5px;
+    line-height: 1;
+  }
+  .brand small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; font-weight: 500; }
+  .brand small b { color: var(--gold); font-weight: 600; }
+  .icon-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--panel);
+    cursor: pointer; display: grid; place-items: center; flex: none;
+  }
+  .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* controls */
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 14px; align-items: center; }
+  .seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+  .seg button {
+    border: 0; background: transparent; cursor: pointer;
+    padding: 9px 16px; border-radius: 999px; font-weight: 600; font-size: 15px; color: var(--muted);
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel); cursor: pointer;
+    padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: 15px;
+  }
+  .btn.primary { background: var(--gold); color: var(--gold-ink); border-color: transparent; }
+  .btn.pro { background: var(--pro); color: #fff; border-color: transparent; display: inline-flex; align-items: center; gap: 8px; }
+  .btn.pro[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--pro); }
+  .btn.pro i { font-style: normal; background: rgba(0,0,0,.22); border-radius: 999px; padding: 1px 9px; font-size: 13px; }
+
+  /* status */
+  .status { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .status h2 { margin: 0; font-size: 20px; font-weight: 600; }
+  .status h2 span { color: var(--muted); font-size: 15px; font-weight: 500; margin-left: 6px; }
+  .meta { display: flex; align-items: baseline; gap: 16px; color: var(--muted); font-weight: 500; }
+  .timer { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 24px; color: var(--ink); min-width: 3.4ch; text-align: right; }
+  .timer.urgent { color: var(--pro); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .45; } }
+
+  /* layout */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+
+  .board-wrap {
+    background: var(--panel);
+    border-radius: 24px;
+    padding: clamp(8px, 2.2vw, 20px);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(var(--n), 1fr);
+    width: 100%;
+    aspect-ratio: 1;
+    container-type: inline-size;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+  }
+  .cell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    font-size: calc(100cqw / var(--n) * .5);
+    line-height: 1;
+    font-weight: 700;
+  }
+  .cell b { position: relative; z-index: 1; font-weight: 700; pointer-events: none; }
+  .cell::before { content: ""; position: absolute; inset: 7%; border-radius: 32%; }
+  .cell.found::before { background: hsl(var(--h) 78% 62%); }
+  .cell.found { color: var(--found-ink); }
+  .cell.sel::before { background: var(--gold); }
+  .cell.sel { color: var(--gold-ink); }
+  .cell.hint::before { box-shadow: 0 0 0 3px var(--gold); }
+  .cell.missed::before { box-shadow: inset 0 0 0 2px var(--pro); }
+  .board.over { cursor: default; }
+
+  /* word list */
+  .words {
+    background: var(--panel);
+    border-radius: 24px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+  .words h3 { margin: 0; font-size: 18px; font-weight: 600; }
+  .words p { margin: 2px 0 12px; color: var(--muted); font-size: 14px; }
+  .words ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .w {
+    width: 100%; text-align: left; cursor: pointer;
+    background: transparent; border: 0; border-left: 4px solid transparent;
+    padding: 7px 8px; border-radius: 8px; font-weight: 600; font-size: 16px;
+  }
+  .w:hover { background: var(--panel2); }
+  .w.done { color: var(--muted); text-decoration: line-through; border-left-color: hsl(var(--h) 78% 62%); cursor: default; }
+  .w.done:hover { background: transparent; }
+  .words.nohint .w { cursor: default; }
+  .words.nohint .w:hover { background: transparent; }
+
+  footer { margin-top: 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  footer b { color: var(--gold); font-weight: 600; }
+
+  /* dialog */
+  dialog {
+    border: 1px solid var(--line); border-radius: 24px;
+    background: var(--panel); color: var(--ink);
+    padding: 26px; width: min(92vw, 400px); box-shadow: var(--shadow);
+  }
+  dialog::backdrop { background: rgba(8, 6, 24, .65); }
+  dialog h2 { margin: 0 0 8px; font-family: "Lilita One", "Fredoka", sans-serif; font-weight: 400; font-size: 30px; }
+  dialog p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; white-space: pre-line; }
+  dialog .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  dialog[open] { animation: pop .22s ease-out; }
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } }
+
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
+    .words ul { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  }
+  @media (max-width: 480px) {
+    .seg button { padding: 8px 11px; font-size: 14px; }
+    .status h2 { font-size: 18px; }
+    .timer { font-size: 21px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .timer.urgent, dialog[open] { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M6 36 L4 14 L15 23 L24 8 L33 23 L44 14 L42 36 Z" fill="#ffc94a"/>
+        <rect x="6" y="38" width="36" height="5" rx="2.5" fill="#ffc94a"/>
+        <circle cx="4" cy="13" r="3" fill="#ff5c7a"/><circle cx="24" cy="7" r="3" fill="#8b6cff"/><circle cx="44" cy="13" r="3" fill="#38d9a0"/>
+      </svg>
+      <div>
+        <h1>WordCrown</h1>
+        <small>by <b>KING_YOSEF_</b></small>
+      </div>
+    </div>
+    <button class="icon-btn" id="themeBtn" aria-label="Switch light or dark theme">
+      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <div class="controls">
+    <div class="seg" id="levels" role="group" aria-label="Difficulty">
+      <button data-mode="easy" aria-pressed="false">Easy</button>
+      <button data-mode="medium" aria-pressed="false">Medium</button>
+      <button data-mode="hard" aria-pressed="true">Hard</button>
+      <button data-mode="expert" aria-pressed="false">Expert</button>
+    </div>
+    <button class="btn pro" id="proBtn" aria-pressed="false">Pro Mode <i>5:00</i></button>
+    <button class="btn" id="newBtn">New game</button>
+  </div>
+
+  <div class="status">
+    <h2><span id="modeName" style="margin:0;color:inherit;font-size:inherit;font-weight:inherit">Hard</span> <span id="best"></span></h2>
+    <div class="meta">
+      <span id="count" aria-live="polite">0 of 15 found</span>
+      <span class="timer" id="timer">0:00</span>
+    </div>
+  </div>
+
+  <main class="layout">
+    <div class="board-wrap">
+      <div class="board" id="board" style="--n:14" aria-label="Word search grid. Drag across letters to select a word."></div>
+    </div>
+    <aside class="words" id="wordsBox">
+      <h3>Words</h3>
+      <p id="wordsHint">Tap a word for a hint</p>
+      <ul id="wordList"></ul>
+    </aside>
+  </main>
+
+  <footer>
+    Drag across letters to select a word. Words can run across, down and diagonally; Hard, Expert and Pro Mode also run backwards.<br>
+    Made by <b>KING_YOSEF_</b>.
+  </footer>
+</div>
+
+<dialog id="dlg">
+  <h2 id="dTitle"></h2>
+  <p id="dBody"></p>
+  <div class="row">
+    <button class="btn primary" id="dMain"></button>
+    <button class="btn" id="dAlt"></button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- WORDS (edit these lists to add your own) ---------- */
+  const CORE = ['cape','card','chunk','graduate','medic','mental','parachute','professional',
+                'razor','seal','shallow','smoke','succeed','trim','tyranny'];
+
+  const EXTRA = [
+    'diploma','degree','campus','scholar','student','lecture','doctor','nurse','surgeon','hospital',
+    'forest','planet','rocket','bridge','castle','dragon','knight','throne','crown','sword','shield',
+    'anchor','harbor','island','desert','jungle','thunder','rainbow','whisper','journey','mystery',
+    'silver','golden','window','garden','pencil','rhythm','travel','sunset','canyon','glacier',
+    'lantern','compass','voyage','puzzle','wizard','bottle','candle','market','pirate','circus',
+    'galaxy','comet','meteor','orbit','falcon','tiger','panther','dolphin','turtle','rabbit',
+    'butter','orange','banana','cherry','pepper','coffee','guitar','piano','violin','trumpet',
+    'camera','laptop','screen','keyboard','battery','engine','tunnel','ladder','hammer','button',
+    'mirror','pocket','ribbon','blanket','jacket','helmet','captain','harvest','freedom','courage',
+    'victory','legend','champion','monarch','empire','royal','palace','jewel','treasure','marble'
+  ];
+
+  /* directions: [rowStep, colStep] — first 2 = easy, first 4 = medium, all 8 = hard+ */
+  const DIRS = [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
+
+  const MODES = {
+    easy:   { label: 'Easy',     n: 10, dirs: 2 },
+    medium: { label: 'Medium',   n: 12, dirs: 4 },
+    hard:   { label: 'Hard',     n: 14, dirs: 8 },
+    expert: { label: 'Expert',   n: 16, dirs: 8 },
+    pro:    { label: 'Pro Mode', n: 15, dirs: 8, limit: 300 }   /* limit in seconds */
+  };
+
+  /* ---------- helpers ---------- */
+  const $ = id => document.getElementById(id);
+  const rand = n => Math.floor(Math.random() * n);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  };
+
+  /* ---------- state ---------- */
+  let state = null;
+  let timerId = null;
+
+  /* ---------- puzzle generation ---------- */
+  function pickWords(key) {
+    const m = MODES[key];
+    const fit = w => w.length <= m.n;
+    const core = shuffle(CORE.filter(fit));
+    const extra = shuffle(EXTRA.filter(fit));
+    if (key === 'easy')   return core.slice(0, 8);
+    if (key === 'medium') return core.slice(0, 10);
+    if (key === 'hard')   return core.slice(0, 15);
+    if (key === 'expert') return [...core.slice(0, 9), ...extra.slice(0, 9)];
+    return [...core.slice(0, 8), ...extra.slice(0, 8)];            /* pro */
+  }
+
+  function build(words, n, dirCount) {
+    const sorted = [...words].sort((a, b) => b.length - a.length);
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const g = Array.from({ length: n }, () => Array(n).fill(''));
+      const placed = [];
+      let ok = true;
+      for (const w of sorted) {
+        const W = w.toUpperCase();
+        let done = false;
+        for (let t = 0; t < 400 && !done; t++) {
+          const [dr, dc] = DIRS[rand(dirCount)];
+          const r = rand(n), c = rand(n);
+          const er = r + dr * (W.length - 1), ec = c + dc * (W.length - 1);
+          if (er < 0 || er >= n || ec < 0 || ec >= n) continue;
+          let fits = true;
+          for (let i = 0; i < W.length; i++) {
+            const ch = g[r + dr * i][c + dc * i];
+            if (ch && ch !== W[i]) { fits = false; break; }
+          }
+          if (!fits) continue;
+          for (let i = 0; i < W.length; i++) g[r + dr * i][c + dc * i] = W[i];
+          placed.push({ word: w, r, c, dr, dc });
+          done = true;
+        }
+        if (!done) { ok = false; break; }
+      }
+      if (ok) {
+        const pool = words.join('').toUpperCase();
+        const abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+          if (!g[r][c]) g[r][c] = Math.random() < .45 ? pool[rand(pool.length)] : abc[rand(26)];
+        }
+        return { grid: g, placed };
+      }
+    }
+    return null;
+  }
+
+  /* ---------- game flow ---------- */
+  function newGame(key) {
+    stopTimer();
+    const m = MODES[key];
+    let words = pickWords(key), result = build(words, m.n, m.dirs);
+    while (!result) { words = words.slice(0, -1); result = build(words, m.n, m.dirs); }
+
+    state = {
+      key, n: m.n, grid: result.grid, placed: result.placed,
+      found: new Set(), over: false, hints: 0, t0: Date.now(), cells: []
+    };
+
+    document.querySelectorAll('#levels button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === key)));
+    $('proBtn').setAttribute('aria-pressed', String(key === 'pro'));
+    $('modeName').textContent = m.label;
+    $('wordsBox').classList.toggle('nohint', key === 'pro');
+    $('wordsHint').textContent = key === 'pro' ? 'No hints in Pro Mode' : 'Tap a word for a hint';
+    $('board').classList.remove('over');
+    renderBoard();
+    renderWords();
+    updateCount();
+    showBest();
+    tick();
+    timerId = setInterval(tick, 250);
+  }
+
+  function renderBoard() {
+    const b = $('board');
+    b.style.setProperty('--n', state.n);
+    b.innerHTML = '';
+    state.cells = [];
+    for (let r = 0; r < state.n; r++) for (let c = 0; c < state.n; c++) {
+      const d = document.createElement('div');
+      d.className = 'cell';
+      d.innerHTML = `<b>${state.grid[r][c]}</b>`;
+      b.appendChild(d);
+      state.cells.push(d);
+    }
+  }
+
+  function hueOf(word) {
+    const i = state.placed.findIndex(p => p.word === word);
+    return (i * 47 + 20) % 360;
+  }
+
+  function renderWords() {
+    const ul = $('wordList');
+    ul.innerHTML = '';
+    [...state.placed].map(p => p.word).sort().forEach(w => {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.className = 'w';
+      btn.textContent = w;
+      btn.dataset.word = w;
+      btn.style.setProperty('--h', hueOf(w));
+      btn.addEventListener('click', () => hint(w));
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+  }
+
+  function updateCount() {
+    $('count').textContent = `${state.found.size} of ${state.placed.length} found`;
+  }
+
+  function showBest() {
+    const v = store.get('wordcrown-best-' + state.key);
+    if (!v) { $('best').textContent = ''; return; }
+    $('best').textContent = state.key === 'pro' ? `Best: ${fmt(+v)} left` : `Best: ${fmt(+v)}`;
+  }
+
+  /* ---------- timer ---------- */
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+  function tick() {
+    if (!state || state.over) return;
+    const m = MODES[state.key];
+    const ms = Date.now() - state.t0;
+    const t = $('timer');
+    if (m.limit) {
+      const left = Math.max(0, m.limit * 1000 - ms);
+      t.textContent = fmt(Math.ceil(left / 1000));
+      t.classList.toggle('urgent', left <= 30000);
+      if (left <= 0) lose();
+    } else {
+      t.textContent = fmt(Math.floor(ms / 1000));
+      t.classList.remove('urgent');
+    }
+  }
+
+  /* ---------- selection (mouse + touch) ---------- */
+  const board = $('board');
+  let drag = null;
+
+  function cellAt(e) {
+    const rect = board.getBoundingClientRect();
+    const n = state.n;
+    const c = clamp(Math.floor((e.clientX - rect.left) / rect.width * n), 0, n - 1);
+    const r = clamp(Math.floor((e.clientY - rect.top) / rect.height * n), 0, n - 1);
+    return [r, c];
+  }
+
+  function snap(r0, c0, r, c) {
+    const dr = r - r0, dc = c - c0, n = state.n;
+    if (!dr && !dc) return [[r0, c0]];
+    const ang = Math.round(Math.atan2(dr, dc) / (Math.PI / 4)) * (Math.PI / 4);
+    const sr = Math.round(Math.sin(ang)), sc = Math.round(Math.cos(ang));
+    const len = Math.max(0, Math.round((dr * sr + dc * sc) / (sr * sr + sc * sc)));
+    const path = [];
+    for (let i = 0; i <= len; i++) {
+      const rr = r0 + sr * i, cc = c0 + sc * i;
+      if (rr < 0 || rr >= n || cc < 0 || cc >= n) break;
+      path.push([rr, cc]);
+    }
+    return path;
+  }
+
+  function paintSel(path) {
+    state.cells.forEach(el => el.classList.remove('sel'));
+    path.forEach(([r, c]) => state.cells[r * state.n + c].classList.add('sel'));
+  }
+
+  board.addEventListener('pointerdown', e => {
+    if (!state || state.over) return;
+    e.preventDefault();
+    board.setPointerCapture(e.pointerId);
+    const [r, c] = cellAt(e);
+    drag = { r0: r, c0: c, path: [[r, c]] };
+    paintSel(drag.path);
+  });
+
+  board.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const [r, c] = cellAt(e);
+    const path = snap(drag.r0, drag.c0, r, c);
+    const last = path[path.length - 1], prev = drag.path[drag.path.length - 1];
+    if (last[0] !== prev[0] || last[1] !== prev[1] || path.length !== drag.path.length) {
+      drag.path = path;
+      paintSel(path);
+    }
+  });
+
+  board.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const path = drag.path;
+    drag = null;
+    paintSel([]);
+    check(path);
+  });
+  board.addEventListener('pointercancel', () => { drag = null; if (state) paintSel([]); });
+
+  function check(path) {
+    if (path.length < 2) return;
+    const str = path.map(([r, c]) => state.grid[r][c]).join('').toLowerCase();
+    const rev = [...str].reverse().join('');
+    const p = state.placed.find(p => !state.found.has(p.word) && (p.word === str || p.word === rev));
+    if (!p) return;
+    markFound(p);
+  }
+
+  function markFound(p) {
+    state.found.add(p.word);
+    const h = hueOf(p.word);
+    for (let i = 0; i < p.word.length; i++) {
+      const el = state.cells[(p.r + p.dr * i) * state.n + (p.c + p.dc * i)];
+      el.classList.add('found');
+      el.style.setProperty('--h', h);
+    }
+    const btn = document.querySelector(`.w[data-word="${p.word}"]`);
+    if (btn) btn.classList.add('done');
+    updateCount();
+    if (state.found.size === state.placed.length) win();
+  }
+
+  function hint(word) {
+    if (!state || state.over || state.key === 'pro' || state.found.has(word)) return;
+    const p = state.placed.find(p => p.word === word);
+    const el = state.cells[p.r * state.n + p.c];
+    state.hints++;
+    el.classList.add('hint');
+    setTimeout(() => el.classList.remove('hint'), 1800);
+  }
+
+  /* ---------- end of game ---------- */
+  function win() {
+    state.over = true;
+    stopTimer();
+    $('board').classList.add('over');
+    $('timer').classList.remove('urgent');
+    const m = MODES[state.key];
+    const elapsed = Math.floor((Date.now() - state.t0) / 1000);
+    let body, title = 'You wear the crown!', score = state.placed.length * 100;
+
+    if (m.limit) {
+      const left = Math.max(0, m.limit - elapsed);
+      score += left * 2;
+      const prev = +store.get('wordcrown-best-pro') || 0;
+      if (left > prev) store.set('wordcrown-best-pro', String(left));
+      body = `All ${state.placed.length} words found with ${fmt(left)} left.\nScore: ${score}`;
+      title = 'Pro Mode cleared!';
+    } else {
+      score = Math.max(0, score - state.hints * 10);
+      const prev = +store.get('wordcrown-best-' + state.key) || Infinity;
+      const isBest = elapsed < prev;
+      if (isBest) store.set('wordcrown-best-' + state.key, String(elapsed));
+      body = `All ${state.placed.length} words found in ${fmt(elapsed)}${isBest ? ' (new best)' : ''}.\nHints used: ${state.hints}. Score: ${score}`;
+    }
+    showBest();
+    dialog({
+      title, body,
+      main: ['Play again', () => newGame(state.key)],
+      alt: state.key === 'pro' ? ['Back to Hard', () => newGame('hard')] : ['Try Pro Mode', openPro]
+    });
+  }
+
+  function lose() {
+    state.over = true;
+    stopTimer();
+    $('timer').textContent = '0:00';
+    $('timer').classList.remove('urgent');
+    $('board').classList.add('over');
+    state.placed.forEach(p => {
+      if (state.found.has(p.word)) return;
+      for (let i = 0; i < p.word.length; i++) state.cells[(p.r + p.dr * i) * state.n + (p.c + p.dc * i)].classList.add('missed');
+    });
+    dialog({
+      title: "Time's up",
+      body: `You found ${state.found.size} of ${state.placed.length} words.\nThe missed words are outlined on the board.`,
+      main: ['Try again', () => newGame('pro')],
+      alt: ['Back to Hard', () => newGame('hard')]
+    });
+  }
+
+  /* ---------- dialog ---------- */
+  const dlg = $('dlg');
+  function dialog({ title, body, main, alt }) {
+    $('dTitle').textContent = title;
+    $('dBody').textContent = body;
+    const bind = (id, def) => {
+      const el = $(id);
+      el.hidden = !def;
+      if (!def) return;
+      el.textContent = def[0];
+      el.onclick = () => { dlg.close(); def[1] && def[1](); };
+    };
+    bind('dMain', main);
+    bind('dAlt', alt);
+    if (dlg.open) dlg.close();
+    dlg.showModal();
+  }
+
+  function openPro() {
+    dialog({
+      title: 'Pro Mode',
+      body: 'You get 5 minutes.\nA 15 by 15 grid, 16 words, every direction, no hints.\nFind them all before the clock reaches zero.',
+      main: ['Start the clock', () => newGame('pro')],
+      alt: ['Cancel', null]
+    });
+  }
+
+  /* ---------- UI wiring ---------- */
+  document.querySelectorAll('#levels button').forEach(b => b.addEventListener('click', () => newGame(b.dataset.mode)));
+  $('proBtn').addEventListener('click', openPro);
+  $('newBtn').addEventListener('click', () => (state && state.key === 'pro') ? openPro() : newGame(state ? state.key : 'hard'));
+
+  const root = document.documentElement;
+  const savedTheme = store.get('wordcrown-theme');
+  root.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  $('themeBtn').addEventListener('click', () => {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    store.set('wordcrown-theme', root.dataset.theme);
+  });
+
+  newGame('hard');
+})();
+</script>
+</body>
+</html>
